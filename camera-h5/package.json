@@ -1,0 +1,38 @@
+{
+  "name": "bear-frog-chess",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.11.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.7.0",
+    "gh-pages": "^1.1.0",
+    "npm-lifecycle": "^2.0.1",
+    "react-scripts": "1.1.1",
+    "redux-devtools": "^3.4.1",
+    "redux-immutable-state-invariant": "^2.1.0"
+  },
+  "dependencies": {
+    "prop-types": "latest",
+    "react": "^16.3.0",
+    "react-dom": "^16.3.0",
+    "react-icons": "^2.2.7",
+    "react-redux": "^5.0.7",
+    "react-router-dom": "^4.2.2",
+    "redux": "^3.7.2",
+    "redux-thunk": "^2.2.0",
+    "socket.io-client": "latest"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "deploy": "gh-pages -d build",
+    "build-deploy": "react-scripts build && gh-pages -d build"
+  },
+  "homepage": "https://www.yuiffy.com/bear-frog-chess",
+  "proxy": "http://localhost:5001"
+}

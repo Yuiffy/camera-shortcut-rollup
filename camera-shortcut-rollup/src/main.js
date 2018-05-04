@@ -34,7 +34,7 @@ const QualityChange = {
 
 class CameraHolder {
   constructor() {
-    if (typeof wx !== 'undefined' && wx.createCameraContext) {
+    if (('wx' in window) && typeof wx !== 'undefined' && wx.createCameraContext) {
       this.isWx = true;
       this.ctx = null;
     } else {
@@ -52,6 +52,8 @@ class CameraHolder {
     }
     this.videoInput = videoInput;
     if (canvasInput) this.canvasInput = canvasInput;
+    this.canvasInput = this.canvasInput || document.createElement('canvas');
+
     return new Promise((reslove, reject) => {
       const constraints = {
         video: {
@@ -107,14 +109,13 @@ class CameraHolder {
         });
       });
     }
-    this.canvasInput = this.canvasInput || document.createElement('canvas');
     const { videoInput: video, canvasInput: canvas } = this;
     console.log(video, canvas);
     const ctx = canvas.getContext('2d');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return Promise.reject();
+    return Promise.resolve();
     //
     // const {quality} = this.state;
     // const type = 'image/jpeg';

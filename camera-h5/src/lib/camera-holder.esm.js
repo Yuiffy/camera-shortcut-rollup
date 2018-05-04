@@ -1,5 +1,3 @@
-'use strict';
-
 // import ms from 'ms';
 // import lunchtime from './lunchtime.js';
 // import millisecondsUntil from './millisecondsUntil.js';
@@ -45,6 +43,7 @@ class CameraHolder {
       this.canvasInput = null;
     }
     this.photoQuality = 92;
+    console.log("isWx=", this.isWx);
   }
 
   init(videoInput, canvasInput = null) {
@@ -111,7 +110,7 @@ class CameraHolder {
         });
       });
     }
-    const { videoInput: video, canvasInput: canvas } = this;
+    const {videoInput: video, canvasInput: canvas} = this;
     console.log(video, canvas);
     const ctx = canvas.getContext('2d');
     canvas.width = video.videoWidth;
@@ -134,4 +133,4 @@ class CameraHolder {
   }
 }
 
-module.exports = CameraHolder;
+export default CameraHolder;

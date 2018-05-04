@@ -2,7 +2,7 @@
   "name": "rollup-starter-lib",
   "version": "1.0.0",
   "main": "../camera-weapp/lib/camera-holder.cjs.js",
-  "module": "dist/camera-holder.esm.js",
+  "module": "../camera-h5/src/lib/camera-holder.esm.js",
   "browser": "dist/camera-holder.umd.js",
   "dependencies": {
     "ms": "^2.0.0"
