@@ -1,5 +1,5 @@
 import React from 'react';
-import CameraHolder from './lib/camera-holder.esm'
+import CameraHolderFactory from './lib/camera-holder.esm.js'
 
 const navi = navigator;
 const win = window;
@@ -25,8 +25,8 @@ class Camera extends React.Component {
       audioSelect: null,
       quality: 0.92,
     };
-    this.cameraHolder = new CameraHolder();
-    this.cameraHolder.init(this.video, this.canvas);
+    this.cameraHolder = CameraHolderFactory.createCameraHolder();
+    // this.cameraHolder.init(this.video, this.canvas);
     this.drawCanvas = this.drawCanvas.bind(this);
     this.gotDevices = this.gotDevices.bind(this);
     this.sendImage = this.sendImage.bind(this);
@@ -76,8 +76,7 @@ class Camera extends React.Component {
     //   alert(`Error! ${JSON.stringify(error)}`);
     //   console.log(error);
     // });
-    const cameraHolder = new CameraHolder();
-    cameraHolder.init(this.video, this.canvas);
+    this.cameraHolder.init(this.video, this.canvas);
   }
 
   // 将设备分为视频设备和音频设备存储到state
@@ -115,30 +114,24 @@ class Camera extends React.Component {
 
   // 将video画到canvas里
   drawCanvas() {
-    const {canvas, video} = this;
-    console.log(video, canvas);
-    const ctx = canvas.getContext('2d');
-    // const { width, height } = video;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    // 获取video实际长宽
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    this.cameraHolder.takePhoto().then(() => {
+      const quality = this.cameraHolder.photoQuality;
+      const type = 'image/jpeg'; // 如果是image/png不能压缩，quality无效；image/jpeg能压缩
 
-    const {quality} = this.state;
-    const type = 'image/jpeg'; // 如果是image/png不能压缩，quality无效；image/jpeg能压缩
-
-    // canvas转图片的两种方法，一种toDataURL，一种toBlob
-    // const url = canvas.toDataURL('image/png', 0.5);
-    // this.setState({ imageUrl: url });
-    console.log('quality type=', typeof quality, quality, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      console.log('toBlob', blob, quality);
-      this.setState({
-        ...this.state,
-        imageUrl: URL.createObjectURL(blob),
-        imageObj: blob,
-      });
-    }, type, parseFloat(quality));
+      // canvas转图片的两种方法，一种toDataURL，一种toBlob
+      // const url = canvas.toDataURL('image/png', 0.5);
+      // this.setState({ imageUrl: url });
+      const canvas = this.canvas;
+      console.log('quality type=', typeof quality, quality, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        console.log('toBlob', blob, quality);
+        this.setState({
+          ...this.state,
+          imageUrl: URL.createObjectURL(blob),
+          imageObj: blob,
+        });
+      }, type, parseFloat(quality));
+    });
   }
 
   cameraChange(e) {

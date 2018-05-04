@@ -1,8 +1,8 @@
-const CameraHolder = require('../lib/camera-holder.cjs.js');
+const CameraHolderFactory = require('../lib/camera-holder.cjs.js');
 Page({
   onLoad() {
     // this.ctx = wx.createCameraContext()
-    this.ch = new CameraHolder();
+    this.ch = CameraHolderFactory.createCameraHolder();
     this.ch.init().then(() => { console.log('init over') });
   },
   takePhoto() {
