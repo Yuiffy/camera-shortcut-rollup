@@ -12,25 +12,19 @@ class WxCameraHolder extends CameraHolder {
   constructor() {
     super();
     this.ctx = null;
-  }
-
-  init() {
-    this.ctx = wxApi.createCameraContext();
-    return Promise.resolve();
-  }
-
-  getCameraDevices() {
-    return [{
+    this.cameraDevices = [{
       text: '前置摄像头',
       value: 'front',
     }, {
       text: '后置摄像头',
       value: 'back',
     }];
+    this.select = 'front';
   }
 
-  selectDevice(device) {
-    return Promise.reject('wx selectDevice not impl');
+  init() {
+    this.ctx = wxApi.createCameraContext();
+    return Promise.resolve();
   }
 
   takePhoto() {

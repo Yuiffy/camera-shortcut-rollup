@@ -22,6 +22,8 @@ const QualityChange = {
 class CameraHolder {
   constructor() {
     this.photoQuality = 92;
+    this.cameraDevices = [];
+    this.select = null;
   }
 
   init() {
@@ -48,15 +50,26 @@ class CameraHolder {
   }
 
   getCameraDevices() {
-    return Promise.reject('getCameraDevices not impl');
+    return this.cameraDevices;
   }
 
-  selectDevice(device) {
-    return Promise.reject('selectDevice not impl');
+  selectDevice(deviceValue) {
+    const selectList = this.cameraDevices.filter(device => device.value === deviceValue);
+    if (selectList.length === 0) return Promise.reject();
+    this.select = deviceValue;
+    return Promise.resolve();
   }
 
   takePhoto() {
     return Promise.reject('takePhoto not impl');
+  }
+
+  uploadFile(url) {
+    return Promise.reject('uploadFile not impl');
+  }
+
+  saveFile() {
+    return Promise.reject('saveFile not impl');
   }
 }
 
@@ -72,25 +85,19 @@ class WxCameraHolder extends CameraHolder {
   constructor() {
     super();
     this.ctx = null;
-  }
-
-  init() {
-    this.ctx = wxApi.createCameraContext();
-    return Promise.resolve();
-  }
-
-  getCameraDevices() {
-    return [{
+    this.cameraDevices = [{
       text: '前置摄像头',
       value: 'front',
     }, {
       text: '后置摄像头',
       value: 'back',
     }];
+    this.select = 'front';
   }
 
-  selectDevice(device) {
-    return Promise.reject('wx selectDevice not impl');
+  init() {
+    this.ctx = wxApi.createCameraContext();
+    return Promise.resolve();
   }
 
   takePhoto() {
@@ -119,44 +126,65 @@ class H5CameraHolder extends CameraHolder {
     this.canvasInput = null;
   }
 
+  // 将设备分为视频设备和音频设备存储到state
+  refreshDeviceList() {
+    return navi.mediaDevices.enumerateDevices()
+      .then((deviceInfos) => {
+        const audios = [];
+        const cameras = [];
+        for (let i = 0; i !== deviceInfos.length; i += 1) {
+          const deviceInfo = deviceInfos[i];
+          const option = {
+            value: deviceInfo.deviceId,
+            text: '',
+          };
+          if (deviceInfo.kind === 'audioinput') {
+            option.text = deviceInfo.label ||
+              `microphone ${audios.length + 1}`;
+            audios.push(option);
+          } else if (deviceInfo.kind === 'videoinput') {
+            option.text = deviceInfo.label || `camera ${cameras.length + 1}`;
+            cameras.push(option);
+          } else {
+            console.log('Found one other kind of source/device: ', deviceInfo);
+          }
+        }
+        this.cameraDevices = cameras;
+        if (cameras.length > 0) this.select = cameras[0].value;
+      });
+  }
+
   init(videoInput, canvasInput = null) {
-    return new Promise((reslove, reject) => {
-      this.videoInput = videoInput;
-      if (canvasInput) this.canvasInput = canvasInput;
-      this.canvasInput = this.canvasInput || document.createElement('canvas');
+    return this.refreshDeviceList()
+      .then(() => new Promise((reslove, reject) => {
+        this.videoInput = videoInput;
+        if (canvasInput) this.canvasInput = canvasInput;
+        this.canvasInput = this.canvasInput || document.createElement('canvas');
 
-      const constraints = {
-        video: {
-          width: {
-            min: 640,
-            ideal: 400000,
+        const constraints = {
+          video: {
+            width: {
+              min: 640,
+              ideal: 400000,
+            },
+            height: {
+              min: 480,
+              ideal: 300000,
+            },
           },
-          height: {
-            min: 480,
-            ideal: 300000,
-          },
-        },
-      };
-      navi.mediaDevices.getUserMedia(constraints)
-        .then((stream) => {
-          console.log('getUserMedia get stream:', stream);
-          this.videoInput.srcObject = stream;
-          this.videoInput.play();
-          reslove();
-        }, (error) => {
-          // alert(`Error! ${JSON.stringify(error)}`);
-          console.log(error);
-          reject(error);
-        });
-    });
-  }
-
-  getCameraDevices() {
-    return Promise.reject('h5 getCameraDevices not impl');
-  }
-
-  selectDevice(device) {
-    return Promise.reject('h5 selectDevice not impl');
+        };
+        navi.mediaDevices.getUserMedia(constraints)
+          .then((stream) => {
+            console.log('getUserMedia get stream:', stream);
+            this.videoInput.srcObject = stream;
+            this.videoInput.play();
+            reslove();
+          }, (error) => {
+            // alert(`Error! ${JSON.stringify(error)}`);
+            console.log(error);
+            reject(error);
+          });
+      }));
   }
 
   takePhoto() {
@@ -167,6 +195,24 @@ class H5CameraHolder extends CameraHolder {
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     return Promise.resolve();
+  }
+
+  uploadFile(url) {
+    return Promise.reject('uploadFile not impl');
+  }
+
+  saveFile(type) {
+    this.canvasInput.toBlob((blob) => {
+      console.log('toBlob', blob, this.photoQuality);
+
+      const a = document.createElement('a');
+      const url = window.URL.createObjectURL(blob);
+      const filename = 'photo.jpg';
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }, type, this.photoQuality);
   }
 }
 

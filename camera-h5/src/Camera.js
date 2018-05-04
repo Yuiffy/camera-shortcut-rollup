@@ -30,6 +30,7 @@ class Camera extends React.Component {
     this.drawCanvas = this.drawCanvas.bind(this);
     this.gotDevices = this.gotDevices.bind(this);
     this.sendImage = this.sendImage.bind(this);
+    this.saveFile = this.saveFile.bind(this);
   }
 
 
@@ -115,22 +116,22 @@ class Camera extends React.Component {
   // 将video画到canvas里
   drawCanvas() {
     this.cameraHolder.takePhoto().then(() => {
-      const quality = this.cameraHolder.photoQuality;
-      const type = 'image/jpeg'; // 如果是image/png不能压缩，quality无效；image/jpeg能压缩
-
-      // canvas转图片的两种方法，一种toDataURL，一种toBlob
-      // const url = canvas.toDataURL('image/png', 0.5);
-      // this.setState({ imageUrl: url });
-      const canvas = this.canvas;
-      console.log('quality type=', typeof quality, quality, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        console.log('toBlob', blob, quality);
-        this.setState({
-          ...this.state,
-          imageUrl: URL.createObjectURL(blob),
-          imageObj: blob,
-        });
-      }, type, parseFloat(quality));
+      // const quality = this.cameraHolder.photoQuality;
+      // const type = 'image/jpeg'; // 如果是image/png不能压缩，quality无效；image/jpeg能压缩
+      //
+      // // canvas转图片的两种方法，一种toDataURL，一种toBlob
+      // // const url = canvas.toDataURL('image/png', 0.5);
+      // // this.setState({ imageUrl: url });
+      // const canvas = this.canvas;
+      // console.log('quality type=', typeof quality, quality, canvas.width, canvas.height);
+      // canvas.toBlob((blob) => {
+      //   console.log('toBlob', blob, quality);
+      //   this.setState({
+      //     ...this.state,
+      //     imageUrl: URL.createObjectURL(blob),
+      //     imageObj: blob,
+      //   });
+      // }, type, parseFloat(quality));
     });
   }
 
@@ -149,6 +150,10 @@ class Camera extends React.Component {
     if (this.props.onSendImage) {
       this.props.onSendImage(this.state.imageObj, name);
     }
+  }
+
+  saveFile() {
+    this.cameraHolder.saveFile('image/jpeg');
   }
 
   render() {
@@ -183,7 +188,8 @@ class Camera extends React.Component {
         </div>
         <div style={{'text-align': 'center'}}>
           <input type="button" onClick={this.drawCanvas} value="截图" style={{'background-color': 'white'}}/>
-          <a download="snap.jpg" href={this.state.imageUrl}>保存图片到本地</a>
+          {/*<a download="snap.jpg" href={this.state.imageUrl}>保存图片到本地</a>*/}
+          <input type="button" onClick={this.saveFile} value="保存图片到本地"/>
           <input type="button" onClick={this.sendImage} value="上传图片"/>
           <br/>
           {this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}

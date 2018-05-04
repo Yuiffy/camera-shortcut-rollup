@@ -22,6 +22,8 @@ const QualityChange = {
 class CameraHolder {
   constructor() {
     this.photoQuality = 92;
+    this.cameraDevices = [];
+    this.select = null;
   }
 
   init() {
@@ -48,15 +50,26 @@ class CameraHolder {
   }
 
   getCameraDevices() {
-    return Promise.reject('getCameraDevices not impl');
+    return this.cameraDevices;
   }
 
-  selectDevice(device) {
-    return Promise.reject('selectDevice not impl');
+  selectDevice(deviceValue) {
+    const selectList = this.cameraDevices.filter(device => device.value === deviceValue);
+    if (selectList.length === 0) return Promise.reject();
+    this.select = deviceValue;
+    return Promise.resolve();
   }
 
   takePhoto() {
     return Promise.reject('takePhoto not impl');
+  }
+
+  uploadFile(url) {
+    return Promise.reject('uploadFile not impl');
+  }
+
+  saveFile() {
+    return Promise.reject('saveFile not impl');
   }
 }
 
