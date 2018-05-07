@@ -1,5 +1,6 @@
 import React from 'react';
 import CameraHolderFactory from './lib/camera-holder.esm.js'
+import headtrackr from 'headtrackr'
 
 const navi = navigator;
 const win = window;
@@ -9,10 +10,24 @@ const win = window;
 //   || navi.mozGetUserMedia;
 const URL = win.URL || win.webkitURL; // 获取到window.URL对象
 
+function drawRect(overlayCanvas, x, y, angle, width, height) {
+  const overlayCtx = overlayCanvas.getContext('2d');
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  overlayCtx.translate(x, y)
+  overlayCtx.rotate(angle - (Math.PI / 2));
+  overlayCtx.strokeStyle = "#00CC00";
+  overlayCtx.strokeRect((-(width / 2)) >> 0, (-(height / 2)) >> 0, width, height);
+  overlayCtx.rotate((Math.PI / 2) - angle);
+  overlayCtx.translate(-x, -y);
+}
+
 class Camera extends React.Component {
   video;
   canvas;
+  overlayCanvas;
+  photoCanvas;
   cameraHolder;
+  htracker;
 
   constructor(props, context) {
     super(props, context);
@@ -40,9 +55,50 @@ class Camera extends React.Component {
       .then(this.gotDevices);
   }
 
+  componentDidMount() {
+    var videoInput = this.video;
+    var canvasInput = this.canvas;
+    var htracker = new headtrackr.Tracker({calcAngles: true});
+    htracker.init(videoInput, canvasInput);
+    htracker.start();
+    this.htracker = htracker;
+
+    const overlayCanvas = this.overlayCanvas;
+    const that = this;
+    document.addEventListener("facetrackingEvent", function(event) {
+      // clear canvas
+      // once we have stable tracking, draw rectangle
+      const {detection, x, y, width, height, angle} = event;
+      if (detection == "CS") {
+        drawRect(overlayCanvas, x, y, angle, width, height);
+
+        that.canvas2.width = overlayCanvas.width;
+        that.canvas2.height = overlayCanvas.height;
+        const ctx2 = that.canvas2.getContext('2d');
+        ctx2.translate(x, y);
+        ctx2.rotate((Math.PI / 2) - angle);
+        ctx2.translate(-x, -y);
+        ctx2.drawImage(that.canvas, 0, 0);
+        ctx2.translate(x, y);
+        ctx2.rotate(angle - (Math.PI / 2));
+        ctx2.translate(-x, -y);
+        that.photoCanvas.width = width;
+        that.photoCanvas.height = height;
+        // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
+        that.photoCanvas.getContext('2d').drawImage(that.canvas2, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
+      }
+    });
+  }
+
   componentDidUpdate() {
     // 获取所选设备的流，在video中播放
-    this.getStream(this.state.cameraSelect, this.state.audioSelect);
+    const that = this;
+    this.getStream(this.state.cameraSelect, this.state.audioSelect).then((e) => {
+      that.canvas.width = that.video.videoWidth || that.video.width || 320;
+      that.canvas.height = that.video.videoHeight || that.video.height || 240;
+      that.overlayCanvas.width = that.canvas.width;
+      that.overlayCanvas.height = that.canvas.height;
+    });
   }
 
   // 获取视频流在video中播放
@@ -77,7 +133,7 @@ class Camera extends React.Component {
     //   alert(`Error! ${JSON.stringify(error)}`);
     //   console.log(error);
     // });
-    this.cameraHolder.init(this.video, this.canvas);
+    return this.cameraHolder.init(this.video, this.photoCanvas);
   }
 
   // 将设备分为视频设备和音频设备存储到state
@@ -205,11 +261,29 @@ class Camera extends React.Component {
           controls
           width={width}
           height={height}
-          style={{width: '50%', height: '100%'}}
+          style={{width: '50%', height: '100%', display: 'none'}}
         />
-        <canvas ref={(canvas) => {
-          this.canvas = canvas;
-        }}/>
+        <div style={{"text-align": "center", position: "relative"}}>
+          <div style={{position: "relative"}}>
+            <canvas ref={(canvas) => {
+              this.canvas = canvas;
+            }} style={{position: "relative"}}/>
+          </div>
+          <div style={{position: "absolute", "text-align": "center", top: 0, width: "100%"}}>
+            <canvas ref={(canvas) => {
+              this.overlayCanvas = canvas;
+            }} style={{position: "relative"}}/>
+          </div>
+        </div>
+        <div style={{"text-align": "center"}}>
+          <canvas style={{display: 'none'}} ref={(canvas) => {
+            this.canvas2 = canvas;
+          }}/>
+          <canvas ref={(canvas) => {
+            this.photoCanvas = canvas;
+          }}/>
+        </div>
+
       </div>
     );
   }

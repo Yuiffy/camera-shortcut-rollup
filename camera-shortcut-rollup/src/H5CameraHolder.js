@@ -11,63 +11,74 @@ class H5CameraHolder extends CameraHolder {
 
   // 将设备分为视频设备和音频设备存储到state
   refreshDeviceList() {
-    return navi.mediaDevices.enumerateDevices()
-      .then((deviceInfos) => {
-        const audios = [];
-        const cameras = [];
-        for (let i = 0; i !== deviceInfos.length; i += 1) {
-          const deviceInfo = deviceInfos[i];
-          const option = {
-            value: deviceInfo.deviceId,
-            text: '',
-          };
-          if (deviceInfo.kind === 'audioinput') {
-            option.text = deviceInfo.label ||
-              `microphone ${audios.length + 1}`;
-            audios.push(option);
-          } else if (deviceInfo.kind === 'videoinput') {
-            option.text = deviceInfo.label || `camera ${cameras.length + 1}`;
-            cameras.push(option);
-          } else {
-            console.log('Found one other kind of source/device: ', deviceInfo);
+    return new Promise((resolve, reject) => {
+      navi.mediaDevices.enumerateDevices()
+        .then((deviceInfos) => {
+          const audios = [];
+          const cameras = [];
+          for (let i = 0; i !== deviceInfos.length; i += 1) {
+            const deviceInfo = deviceInfos[i];
+            const option = {
+              value: deviceInfo.deviceId,
+              text: '',
+            };
+            if (deviceInfo.kind === 'audioinput') {
+              option.text = deviceInfo.label ||
+                `microphone ${audios.length + 1}`;
+              audios.push(option);
+            } else if (deviceInfo.kind === 'videoinput') {
+              option.text = deviceInfo.label || `camera ${cameras.length + 1}`;
+              cameras.push(option);
+            } else {
+              console.log('Found one other kind of source/device: ', deviceInfo);
+            }
           }
-        }
-        this.cameraDevices = cameras;
-        if (cameras.length > 0) this.select = cameras[0].value;
-      });
+          this.cameraDevices = cameras;
+          if (cameras.length > 0) this.select = cameras[0].value;
+          resolve('refresh Device List success');
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
   }
 
-  init(videoInput, canvasInput = null) {
-    return this.refreshDeviceList()
-      .then(() => new Promise((reslove, reject) => {
-        this.videoInput = videoInput;
-        if (canvasInput) this.canvasInput = canvasInput;
-        this.canvasInput = this.canvasInput || document.createElement('canvas');
+  init(videoInput = null, canvasInput = null) {
+    return new Promise((reslove, reject) =>
+      this.refreshDeviceList()
+        .then((result) => {
+          console.log('refreshDeviceList then result=', result);
+          if (videoInput) this.videoInput = videoInput;
+          if (canvasInput) this.canvasInput = canvasInput;
+          this.canvasInput = this.canvasInput || document.createElement('canvas');
+          this.videoInput = this.videoInput || document.createElement('video');
 
-        const constraints = {
-          video: {
-            width: {
-              min: 640,
-              ideal: 400000,
+          const constraints = {
+            video: {
+              width: {
+                min: 640,
+                ideal: 400000,
+              },
+              height: {
+                min: 480,
+                ideal: 300000,
+              },
             },
-            height: {
-              min: 480,
-              ideal: 300000,
-            },
-          },
-        };
-        navi.mediaDevices.getUserMedia(constraints)
-          .then((stream) => {
-            console.log('getUserMedia get stream:', stream);
-            this.videoInput.srcObject = stream;
-            this.videoInput.play();
-            reslove();
-          }, (error) => {
-            // alert(`Error! ${JSON.stringify(error)}`);
-            console.log(error);
-            reject(error);
-          });
-      }));
+          };
+          navi.mediaDevices.getUserMedia(constraints)
+            .then((stream) => {
+              console.log('getUserMedia get stream:', stream);
+              this.videoInput.srcObject = stream;
+              this.videoInput.play()
+                .then(() => {
+                  reslove('init over!');
+                });
+            }, (error) => {
+              // alert(`Error! ${JSON.stringify(error)}`);
+              console.log('getUserMedia Error: ', error);
+              reject(error);
+            });
+        }));
   }
 
   takePhoto() {

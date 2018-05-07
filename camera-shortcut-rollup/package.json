@@ -5,7 +5,6 @@
   "module": "../camera-h5/src/lib/camera-holder.esm.js",
   "browser": "dist/camera-holder.umd.js",
   "dependencies": {
-    "ms": "^2.0.0"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
