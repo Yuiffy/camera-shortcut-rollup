@@ -1,4 +1,5 @@
 import CameraHolder from './CameraHolder';
+import { downloadCanvas, uploadCanvas } from './CanvasUtil';
 
 const navi = navigator;
 
@@ -91,22 +92,16 @@ class H5CameraHolder extends CameraHolder {
     return Promise.resolve();
   }
 
-  uploadFile(url) {
-    return Promise.reject('uploadFile not impl');
+  // 这个type要传入"image/jpeg"这样的形式
+  uploadFile(apiUrl, type, name) {
+    return uploadCanvas(this.canvasInput, apiUrl, type, name, this.photoQuality);
   }
 
-  saveFile(type) {
-    this.canvasInput.toBlob((blob) => {
-      console.log('toBlob', blob, this.photoQuality);
-
-      const a = document.createElement('a');
-      const url = window.URL.createObjectURL(blob);
-      const filename = 'photo.jpg';
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    }, type, this.photoQuality);
+  // 传入"png"或者"jpeg",会用在文件后缀名和toBlob用的"image/xxx"里
+  saveFile(fileNamePrefix, type) {
+    const canvas = this.canvasInput;
+    const { photoQuality } = this;
+    downloadCanvas(canvas, fileNamePrefix, type, photoQuality);
   }
 }
 

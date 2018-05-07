@@ -1,5 +1,6 @@
 import WxCameraHolder from './WxCameraHolder';
 import H5CameraHolder from './H5CameraHolder';
+import * as CanvasUtil from './CanvasUtil';
 
 const CameraHolderFactory = {
   createCameraHolder: () => {
@@ -14,4 +15,4 @@ const CameraHolderFactory = {
   },
 };
 
-export default CameraHolderFactory;
+export { CameraHolderFactory, CanvasUtil };

@@ -68,7 +68,7 @@ class CameraHolder {
     return Promise.reject('uploadFile not impl');
   }
 
-  saveFile() {
+  saveFile(fileNamePrefix, type) {
     return Promise.reject('saveFile not impl');
   }
 }

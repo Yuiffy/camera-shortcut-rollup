@@ -1,5 +1,5 @@
 import React from 'react';
-import CameraHolderFactory from './lib/camera-holder.esm.js'
+import {CameraHolderFactory, CanvasUtil} from './lib/camera-holder.esm.js'
 import headtrackr from 'headtrackr'
 
 const navi = navigator;
@@ -10,38 +10,18 @@ const win = window;
 //   || navi.mozGetUserMedia;
 const URL = win.URL || win.webkitURL; // 获取到window.URL对象
 
-function drawRect(overlayCanvas, x, y, angle, width, height) {
-  const overlayCtx = overlayCanvas.getContext('2d');
-  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-  overlayCtx.translate(x, y)
-  overlayCtx.rotate(angle - (Math.PI / 2));
-  overlayCtx.strokeStyle = "#00CC00";
-  overlayCtx.strokeRect((-(width / 2)) >> 0, (-(height / 2)) >> 0, width, height);
-  overlayCtx.rotate((Math.PI / 2) - angle);
-  overlayCtx.translate(-x, -y);
+function toFullScreen(dom = document.documentElement) {
+  if (dom.requestFullscreen) {
+    return dom.requestFullScreen();
+  } else if (dom.webkitRequestFullScreen) {
+    return dom.webkitRequestFullScreen();
+  } else if (dom.mozRequestFullScreen) {
+    return dom.mozRequestFullScreen();
+  } else {
+    return dom.msRequestFullscreen();
+  }
 }
 
-function cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, aspectRatio = null) {
-  tempCanvas.width = canvas.width;
-  tempCanvas.height = canvas.height;
-  const ctx2 = tempCanvas.getContext('2d');
-  ctx2.translate(x, y);
-  ctx2.rotate((Math.PI / 2) - angle);
-  ctx2.translate(-x, -y);
-  ctx2.drawImage(canvas, 0, 0);
-  ctx2.translate(x, y);
-  ctx2.rotate(angle - (Math.PI / 2));
-  ctx2.translate(-x, -y);
-  // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
-  if (aspectRatio !== null) {
-    //截取更多的部分来满足长宽比
-    if (height * aspectRatio > width) width = height * aspectRatio;
-    else height = width / aspectRatio;
-  }
-  headCanvas.width = width;
-  headCanvas.height = height;
-  headCanvas.getContext('2d').drawImage(tempCanvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
-}
 
 class Camera extends React.Component {
   video;
@@ -90,19 +70,16 @@ class Camera extends React.Component {
 
     document.addEventListener('headtrackrStatus',
       function(event) {
-        if (event.status == "getUserMedia") {
-          alert("getUserMedia is supported!");
-        }
-        if (event.status == "found") {
-          //停止检测，过一段时间重新检测
-          // setTimeout(()=>{
-          //   console.log("found!");
-          //   htracker.stop();
-          //   setTimeout(() => {
-          //     htracker.start();
-          //   }, 1000);
-          // });
-
+        switch (event.status) {
+          case "getUserMedia":
+            alert("getUserMedia is supported!");
+            break;
+          case "detecting":
+            console.log("detecting", event);
+            break;
+          case "found":
+            console.log("found", event);
+            break;
         }
       }
     );
@@ -112,10 +89,11 @@ class Camera extends React.Component {
       // once we have stable tracking, draw rectangle
       const {detection, x, y, width, height, angle} = event;
       if (detection == "CS") {
-        drawRect(overlayCanvas, x, y, angle, width, height);
+        CanvasUtil.drawRect(overlayCanvas, x, y, angle, width, height, 3, "#00CC00");
 
         const {tempCanvas, headCanvas, canvas} = that;
-        cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1/1);
+        CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1 / 1);
+        CanvasUtil.clipCircle(headCanvas);
       } else {
         console.log("detection not CS: ", detection);
       }
@@ -234,14 +212,15 @@ class Camera extends React.Component {
   }
 
   sendImage() {
-    const name = `${this.state.quality}.jpg`;
-    if (this.props.onSendImage) {
-      this.props.onSendImage(this.state.imageObj, name);
-    }
+    // const name = `${this.state.quality}.jpg`;
+    // if (this.props.onSendImage) {
+    //   this.props.onSendImage(this.state.imageObj, name);
+    // }
+    this.cameraHolder.uploadFile('/ocr/uploadImage', 'image/jpeg', `photo_${this.state.quality}.jpeg`);
   }
 
   saveFile() {
-    this.cameraHolder.saveFile('image/jpeg');
+    this.cameraHolder.saveFile('photo', 'jpeg');
   }
 
   render() {
@@ -259,15 +238,15 @@ class Camera extends React.Component {
                 <option key={option.value} value={option.value}>{option.text}</option>)
             }
           </select>
-          麦克风：
-          <select onChange={this.audioChange.bind(this)}>
-            {
-              audios.map(option =>
-                <option key={option.value} value={option.value}>{option.text}</option>)
-            }
-          </select>
+          {/*麦克风：*/}
+          {/*<select onChange={this.audioChange.bind(this)}>*/}
+          {/*{*/}
+          {/*audios.map(option =>*/}
+          {/*<option key={option.value} value={option.value}>{option.text}</option>)*/}
+          {/*}*/}
+          {/*</select>*/}
           <br/>
-          质量：<input
+          截图保存质量：<input
           defaultValue={quality}
           onChange={(e) => {
             this.setState({...this.state, quality: e.target.value});
@@ -280,8 +259,12 @@ class Camera extends React.Component {
           <input type="button" onClick={this.saveFile} value="保存图片到本地"/>
           <input type="button" onClick={this.sendImage} value="上传图片"/>
           <input type="button" onClick={() => {
-            this.htracker.stop()
-          }} value="停止tracker"/>
+            this.htracker.stop();
+            this.htracker.start();
+          }} value="重新跟踪"/>
+          <input type="button" onClick={() => {
+            toFullScreen();
+          }} value="页面全屏"/>
           <br/>
           {this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}
           {this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}
