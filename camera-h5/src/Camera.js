@@ -21,6 +21,28 @@ function drawRect(overlayCanvas, x, y, angle, width, height) {
   overlayCtx.translate(-x, -y);
 }
 
+function cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, aspectRatio = null) {
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const ctx2 = tempCanvas.getContext('2d');
+  ctx2.translate(x, y);
+  ctx2.rotate((Math.PI / 2) - angle);
+  ctx2.translate(-x, -y);
+  ctx2.drawImage(canvas, 0, 0);
+  ctx2.translate(x, y);
+  ctx2.rotate(angle - (Math.PI / 2));
+  ctx2.translate(-x, -y);
+  // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
+  if (aspectRatio !== null) {
+    //截取更多的部分来满足长宽比
+    if (height * aspectRatio > width) width = height * aspectRatio;
+    else height = width / aspectRatio;
+  }
+  headCanvas.width = width;
+  headCanvas.height = height;
+  headCanvas.getContext('2d').drawImage(tempCanvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
+}
+
 class Camera extends React.Component {
   video;
   canvas;
@@ -65,6 +87,26 @@ class Camera extends React.Component {
 
     const overlayCanvas = this.overlayCanvas;
     const that = this;
+
+    document.addEventListener('headtrackrStatus',
+      function(event) {
+        if (event.status == "getUserMedia") {
+          alert("getUserMedia is supported!");
+        }
+        if (event.status == "found") {
+          //停止检测，过一段时间重新检测
+          // setTimeout(()=>{
+          //   console.log("found!");
+          //   htracker.stop();
+          //   setTimeout(() => {
+          //     htracker.start();
+          //   }, 1000);
+          // });
+
+        }
+      }
+    );
+
     document.addEventListener("facetrackingEvent", function(event) {
       // clear canvas
       // once we have stable tracking, draw rectangle
@@ -72,20 +114,10 @@ class Camera extends React.Component {
       if (detection == "CS") {
         drawRect(overlayCanvas, x, y, angle, width, height);
 
-        that.canvas2.width = overlayCanvas.width;
-        that.canvas2.height = overlayCanvas.height;
-        const ctx2 = that.canvas2.getContext('2d');
-        ctx2.translate(x, y);
-        ctx2.rotate((Math.PI / 2) - angle);
-        ctx2.translate(-x, -y);
-        ctx2.drawImage(that.canvas, 0, 0);
-        ctx2.translate(x, y);
-        ctx2.rotate(angle - (Math.PI / 2));
-        ctx2.translate(-x, -y);
-        that.photoCanvas.width = width;
-        that.photoCanvas.height = height;
-        // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
-        that.photoCanvas.getContext('2d').drawImage(that.canvas2, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
+        const {tempCanvas, headCanvas, canvas} = that;
+        cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1/1);
+      } else {
+        console.log("detection not CS: ", detection);
       }
     });
   }
@@ -247,6 +279,9 @@ class Camera extends React.Component {
           {/*<a download="snap.jpg" href={this.state.imageUrl}>保存图片到本地</a>*/}
           <input type="button" onClick={this.saveFile} value="保存图片到本地"/>
           <input type="button" onClick={this.sendImage} value="上传图片"/>
+          <input type="button" onClick={() => {
+            this.htracker.stop()
+          }} value="停止tracker"/>
           <br/>
           {this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}
           {this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}
@@ -277,8 +312,13 @@ class Camera extends React.Component {
         </div>
         <div style={{"text-align": "center"}}>
           <canvas style={{display: 'none'}} ref={(canvas) => {
-            this.canvas2 = canvas;
+            this.tempCanvas = canvas;
           }}/>
+          <br/>
+          <canvas ref={(canvas) => {
+            this.headCanvas = canvas;
+          }} style={{width: "10%"}}/>
+          <br/>
           <canvas ref={(canvas) => {
             this.photoCanvas = canvas;
           }}/>
