@@ -44,7 +44,8 @@ class H5CameraHolder extends CameraHolder {
     });
   }
 
-  init(videoInput = null, canvasInput = null) {
+  //advanced传入这样的数组，系统会从上到下检测直到找到摄像头支持的，详情见getUserMedia的constraints参数：[{ width: 4032, height: 3024 },{ aspectRatio: 4 / 3 }]
+  init(videoInput = null, canvasInput = null, advanced = []) {
     return new Promise((reslove, reject) =>
       this.refreshDeviceList()
         .then((result) => {
@@ -58,15 +59,19 @@ class H5CameraHolder extends CameraHolder {
             video: {
               width: {
                 min: 640,
-                ideal: 400000,
+                ideal: 4320,
               },
               height: {
                 min: 480,
-                ideal: 300000,
+                ideal: 4320,
               },
+              aspectRatio: { ideal: 1 },
+              // advanced,
             },
           };
           if (this.select) constraints.video.deviceId = { exact: this.select };
+          const supported = navi.mediaDevices.getSupportedConstraints();
+          console.log('constraints = ', constraints, ' supported=', supported);
           navi.mediaDevices.getUserMedia(constraints)
             .then((stream) => {
               console.log('getUserMedia get stream:', stream);

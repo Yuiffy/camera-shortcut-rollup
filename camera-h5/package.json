@@ -15,7 +15,6 @@
     "redux-immutable-state-invariant": "^2.1.0"
   },
   "dependencies": {
-    "headtrackr": "0.0.1",
     "prop-types": "latest",
     "react": "^16.3.0",
     "react-dom": "^16.3.0",

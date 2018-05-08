@@ -157,6 +157,7 @@ const uploadCanvas = (canvas, apiUrl, type = 'image/jpeg', name = 'file.jpeg', q
 });
 
 const clipCircle = (canvas, _x = null, _y = null, _r = null) => {
+  if (canvas.width <= 0 || canvas.height <= 0) return;
   const x = _x || canvas.width / 2;
   const y = _y || canvas.height / 2;
   const minW = Math.min(x, y);
@@ -168,14 +169,15 @@ const clipCircle = (canvas, _x = null, _y = null, _r = null) => {
   const tempCtx = tempCanvas.getContext('2d');
   tempCanvas.width = 2 * r;
   tempCanvas.height = 2 * r;
-  tempCtx.drawImage(canvas, x - r, y - r, 2 * r, 2 * r); // 在刚刚裁剪的园上画图
+  // TODO: 有时候会报错index out什么的
+  tempCtx.drawImage(canvas, x - r, y - r, 2 * r, 2 * r, 0, 0, 2 * r, 2 * r);// 保存方形图像到临时canvas中
 
   ctx.save(); // 保存当前ctx的状态
   // ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.arc(x, y, r, 0, 2 * Math.PI); // 画出圆 x,y,r,0,2pi
   ctx.clip(); // 裁剪上面的圆形
-  ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height); // 在刚刚裁剪的园上画图
+  ctx.drawImage(tempCanvas, 0, 0, 2 * r, 2 * r, x - r, y - r, 2 * r, 2 * r); // 在刚刚裁剪的圆上画图
   // ctx.fillRect(0, 0, 100, 100);
   ctx.restore(); // 还原状态
 };
@@ -215,6 +217,11 @@ function cropRectToCanvas(
   ctx2.rotate(angle - (Math.PI / 2));
   ctx2.translate(-x, -y);
   // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
+
+  // Safari不接受0的长宽
+  width = Math.max(1, width);
+  height = Math.max(1, height);
+
   if (aspectRatio !== null && aspectRatio != 0) {
     // 截取更多的部分来满足长宽比
     if (height * aspectRatio > width) {
@@ -228,7 +235,7 @@ function cropRectToCanvas(
 
   let sx = x - width / 2;
   let sy = y - height / 2;
-  //safari不允许框超出原图像，否则会不绘图。
+  // safari不允许框超出原图像，否则会不绘图。
   sx = fitMinMax(sx, 0, tempCanvas.width - width - 1);
   sy = fitMinMax(sy, 0, tempCanvas.height - height - 1);
 
@@ -287,7 +294,8 @@ class H5CameraHolder extends CameraHolder {
     });
   }
 
-  init(videoInput = null, canvasInput = null) {
+  //advanced传入这样的数组，系统会从上到下检测直到找到摄像头支持的，详情见getUserMedia的constraints参数：[{ width: 4032, height: 3024 },{ aspectRatio: 4 / 3 }]
+  init(videoInput = null, canvasInput = null, advanced = []) {
     return new Promise((reslove, reject) =>
       this.refreshDeviceList()
         .then((result) => {
@@ -301,15 +309,19 @@ class H5CameraHolder extends CameraHolder {
             video: {
               width: {
                 min: 640,
-                ideal: 400000,
+                ideal: 4320,
               },
               height: {
                 min: 480,
-                ideal: 300000,
+                ideal: 4320,
               },
+              aspectRatio: { ideal: 1 },
+              // advanced,
             },
           };
           if (this.select) constraints.video.deviceId = { exact: this.select };
+          const supported = navi.mediaDevices.getSupportedConstraints();
+          console.log('constraints = ', constraints, ' supported=', supported);
           navi.mediaDevices.getUserMedia(constraints)
             .then((stream) => {
               console.log('getUserMedia get stream:', stream);

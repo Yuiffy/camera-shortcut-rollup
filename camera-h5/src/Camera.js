@@ -1,6 +1,6 @@
 import React from 'react';
 import {CameraHolderFactory, CanvasUtil} from './lib/camera-holder.esm.js'
-import headtrackr from 'headtrackr'
+import headtrackr from './lib/headtracker.js'
 
 const navi = navigator;
 const win = window;
@@ -62,7 +62,7 @@ class Camera extends React.Component {
     var videoInput = this.video;
     var canvasInput = this.canvas;
     var htracker = new headtrackr.Tracker({calcAngles: true});
-    htracker.init(videoInput, canvasInput);
+    htracker.init(videoInput, canvasInput, false);//第三个参数是是否自动从摄像头获取内容传到video，我们这里通过cameraHolder来控制，不需要htracker来进行这个操作，就传false
     htracker.start();
     this.htracker = htracker;
 
@@ -76,7 +76,7 @@ class Camera extends React.Component {
             alert("getUserMedia is supported!");
             break;
           case "detecting":
-            console.log("detecting", event);
+            // console.log("detecting", event);
             break;
           case "found":
             console.log("found, and we will upload the photo ", event);
@@ -97,7 +97,7 @@ class Camera extends React.Component {
         CanvasUtil.drawRect(overlayCanvas, x, y, angle, width, height, 3, "#00CC00");
 
         const {tempCanvas, headCanvas, canvas} = that;
-        CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1 / 1);
+        CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 4/3);
         CanvasUtil.clipCircle(headCanvas);
       } else {
         console.log("detection not CS: ", detection);
@@ -148,7 +148,7 @@ class Camera extends React.Component {
     //   alert(`Error! ${JSON.stringify(error)}`);
     //   console.log(error);
     // });
-    return this.cameraHolder.init(this.video, this.photoCanvas, camera);
+    return this.cameraHolder.init(this.video, this.photoCanvas, [ {width: 640, height: 640}]);
   }
 
   // 将设备分为视频设备和音频设备存储到state
@@ -275,8 +275,8 @@ class Camera extends React.Component {
             this.setState({...this.state, debug: this.state.debug ^ 1});
           }} value="debug"/>
           <br/>
-          {this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}
-          {this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}
+          {/*{this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}*/}
+          {/*{this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}*/}
         </div>
         <div>
           <div style={{"text-align": "center", position: "relative"}}>
@@ -309,7 +309,7 @@ class Camera extends React.Component {
             }}
             muted
             autoPlay
-            playsinline
+            playsInline
             controls
             width={width}
             height={height}
