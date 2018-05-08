@@ -96,8 +96,8 @@ function cropRectToCanvas(
   // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
 
   // Safari不接受0的长宽
-  width = Math.max(1, width);
-  height = Math.max(1, height);
+  width = fitMinMax(width, 1, tempCanvas.width - 1);
+  height = fitMinMax(height, 1, tempCanvas.height - 1);
 
   if (aspectRatio !== null && aspectRatio != 0) {
     // 截取更多的部分来满足长宽比

@@ -22,6 +22,7 @@ const QualityChange = {
 class CameraHolder {
   constructor() {
     this.photoQuality = 92;
+    this.aspectRatio = 4 / 3;
     this.cameraDevices = [];
     this.select = null;
   }
@@ -42,6 +43,15 @@ class CameraHolder {
     return this;
   }
 
+  setAspectRatio(aspectRatio) {
+    if (aspectRatio > 0) {
+      this.aspectRatio = aspectRatio;
+    } else {
+      console.log('aspectRatio <= 0 ! wont save.');
+    }
+    return this;
+  }
+
   getPhotoQuality(type = 'number') {
     if (type === 'string') {
       return QualityChange.itos(this.photoQuality);
@@ -54,10 +64,16 @@ class CameraHolder {
   }
 
   selectDevice(deviceValue) {
-    const selectList = this.cameraDevices.filter(device => device.value === deviceValue);
-    if (selectList.length === 0) return Promise.reject();
-    this.select = deviceValue;
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const selectList = this.cameraDevices.filter(device => device.value === deviceValue);
+      if (selectList.length === 0) reject(new Error('找不到所选设备！请刷新网页试试'));
+      this.select = deviceValue;
+      this.refreshStream()
+        .then(
+          result => resolve(result),
+          result => reject(result),
+        );
+    });
   }
 
   takePhoto() {
@@ -70,6 +86,10 @@ class CameraHolder {
 
   saveFile(fileNamePrefix, type) {
     return Promise.reject('saveFile not impl');
+  }
+
+  refreshStream() {
+    return Promise.reject('refreshStream not impl');
   }
 }
 

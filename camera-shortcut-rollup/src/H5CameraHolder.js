@@ -44,9 +44,8 @@ class H5CameraHolder extends CameraHolder {
     });
   }
 
-  //advanced传入这样的数组，系统会从上到下检测直到找到摄像头支持的，详情见getUserMedia的constraints参数：[{ width: 4032, height: 3024 },{ aspectRatio: 4 / 3 }]
-  init(videoInput = null, canvasInput = null, advanced = []) {
-    return new Promise((reslove, reject) =>
+  init(videoInput = null, canvasInput = null) {
+    return new Promise((resolve, reject) =>
       this.refreshDeviceList()
         .then((result) => {
           console.log('refreshDeviceList then result=', result);
@@ -54,38 +53,45 @@ class H5CameraHolder extends CameraHolder {
           if (canvasInput) this.canvasInput = canvasInput;
           this.canvasInput = this.canvasInput || document.createElement('canvas');
           this.videoInput = this.videoInput || document.createElement('video');
-
-          const constraints = {
-            video: {
-              width: {
-                min: 640,
-                ideal: 4320,
-              },
-              height: {
-                min: 480,
-                ideal: 4320,
-              },
-              aspectRatio: { ideal: 1 },
-              // advanced,
-            },
-          };
-          if (this.select) constraints.video.deviceId = { exact: this.select };
-          const supported = navi.mediaDevices.getSupportedConstraints();
-          console.log('constraints = ', constraints, ' supported=', supported);
-          navi.mediaDevices.getUserMedia(constraints)
-            .then((stream) => {
-              console.log('getUserMedia get stream:', stream);
-              this.videoInput.srcObject = stream;
-              this.videoInput.play()
-                .then(() => {
-                  reslove('init over!');
-                });
-            }, (error) => {
-              // alert(`Error! ${JSON.stringify(error)}`);
-              console.log('getUserMedia Error: ', error);
-              reject(error);
-            });
+          this.refreshStream()
+            .then(result2 => resolve(result2), result3 => reject(result3));
         }));
+  }
+
+  refreshStream() {
+    return new Promise((resolve, reject) => {
+      const constraints = {
+        video: {
+          // width: {
+          //   // min: 480,
+          //   // ideal: 4320,
+          // },
+          height: {
+            min: 480,
+            ideal: 4320,
+          },
+          // advanced: [],
+        },
+      };
+      // 选择设备
+      if (this.select) constraints.video.deviceId = { exact: this.select };
+      if (this.aspectRatio) constraints.video.aspectRatio = { ideal: this.aspectRatio };
+      const supported = navi.mediaDevices.getSupportedConstraints();
+      console.log('constraints = ', constraints, ' supported=', supported);
+      navi.mediaDevices.getUserMedia(constraints)
+        .then((stream) => {
+          console.log('getUserMedia get stream:', stream);
+          this.videoInput.srcObject = stream;
+          this.videoInput.play()
+            .then(() => {
+              resolve('init over!');
+            });
+        }, (error) => {
+          // alert(`Error! ${JSON.stringify(error)}`);
+          console.log('getUserMedia Error: ', error);
+          reject(error);
+        });
+    });
   }
 
   takePhoto() {

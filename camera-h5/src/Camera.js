@@ -1,6 +1,7 @@
 import React from 'react';
 import {CameraHolderFactory, CanvasUtil} from './lib/camera-holder.esm.js'
 import headtrackr from './lib/headtracker.js'
+import './Camera.css';
 
 const navi = navigator;
 const win = window;
@@ -34,13 +35,10 @@ class Camera extends React.Component {
   constructor(props, context) {
     super(props, context);
     this.state = {
-      imageUrl: '#',
-      imageObj: null,
       cameras: [],
       audios: [],
       cameraSelect: null,
       audioSelect: null,
-      quality: 0.92,
       debug: false,
     };
     this.cameraHolder = CameraHolderFactory.createCameraHolder();
@@ -66,8 +64,16 @@ class Camera extends React.Component {
     htracker.start();
     this.htracker = htracker;
 
-    const overlayCanvas = this.overlayCanvas;
     const that = this;
+
+    this.getStream(this.state.cameraSelect, this.state.audioSelect).then((e) => {
+      that.canvas.width = that.video.videoWidth || that.video.width || 320;
+      that.canvas.height = that.video.videoHeight || that.video.height || 240;
+      that.overlayCanvas.width = that.canvas.width;
+      that.overlayCanvas.height = that.canvas.height;
+    });
+
+    const overlayCanvas = this.overlayCanvas;
 
     document.addEventListener('headtrackrStatus',
       function(event) {
@@ -85,6 +91,9 @@ class Camera extends React.Component {
               CanvasUtil.uploadCanvas(that.headCanvas, '/ocr/uploadImage', 'image/jpeg', 'head_photo.jpeg');
             });
             break;
+          case "lost":
+            that.overlayCanvas.getContext('2d').clearRect(0, 0, that.overlayCanvas.width, that.overlayCanvas.height);
+            break;
         }
       }
     );
@@ -97,7 +106,7 @@ class Camera extends React.Component {
         CanvasUtil.drawRect(overlayCanvas, x, y, angle, width, height, 3, "#00CC00");
 
         const {tempCanvas, headCanvas, canvas} = that;
-        CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 4/3);
+        CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1 / 1);
         CanvasUtil.clipCircle(headCanvas);
       } else {
         console.log("detection not CS: ", detection);
@@ -106,14 +115,6 @@ class Camera extends React.Component {
   }
 
   componentDidUpdate() {
-    // 获取所选设备的流，在video中播放
-    const that = this;
-    this.getStream(this.state.cameraSelect, this.state.audioSelect).then((e) => {
-      that.canvas.width = that.video.videoWidth || that.video.width || 320;
-      that.canvas.height = that.video.videoHeight || that.video.height || 240;
-      that.overlayCanvas.width = that.canvas.width;
-      that.overlayCanvas.height = that.canvas.height;
-    });
   }
 
   // 获取视频流在video中播放
@@ -148,7 +149,7 @@ class Camera extends React.Component {
     //   alert(`Error! ${JSON.stringify(error)}`);
     //   console.log(error);
     // });
-    return this.cameraHolder.init(this.video, this.photoCanvas, [ {width: 640, height: 640}]);
+    return this.cameraHolder.setAspectRatio(1 / 1).init(this.video, this.photoCanvas);
   }
 
   // 将设备分为视频设备和音频设备存储到state
@@ -209,7 +210,6 @@ class Camera extends React.Component {
   cameraChange(e) {
     const {value} = e.target;
     this.cameraHolder.selectDevice(value);
-    this.setState({...this.state, cameraSelect: value});
   }
 
   audioChange(e) {
@@ -253,21 +253,23 @@ class Camera extends React.Component {
           {/*</select>*/}
           <br/>
           截图保存质量：<input
-          defaultValue={quality}
+          defaultValue={0.92}
           onChange={(e) => {
-            this.setState({...this.state, quality: e.target.value});
+            this.cameraHolder.setPhotoQuality(parseFloat(e.target.value));
           }}
         />
         </div>
         <div style={{'text-align': 'center'}}>
           <input type="button" onClick={this.drawCanvas} value="截图" style={{'background-color': 'white'}}/>
-          {/*<a download="snap.jpg" href={this.state.imageUrl}>保存图片到本地</a>*/}
           <input type="button" onClick={this.saveFile} value="保存图片到本地"/>
           <input type="button" onClick={this.sendImage} value="上传图片"/>
           <input type="button" onClick={() => {
             this.htracker.stop();
             this.htracker.start();
           }} value="重新跟踪"/>
+          <input type="button" onClick={() => {
+            this.htracker.stop();
+          }} value="关闭跟踪"/>
           <input type="button" onClick={() => {
             toFullScreen();
           }} value="页面全屏"/>
@@ -281,14 +283,23 @@ class Camera extends React.Component {
         <div>
           <div style={{"text-align": "center", position: "relative"}}>
             <div style={{position: "relative"}}>
-              <canvas ref={(canvas) => {
-                this.canvas = canvas;
-              }} style={{position: "relative", "max-height": "60vh", "max-width":"100vw"}}/>
+              <video
+                ref={(video) => {
+                  this.video = video;
+                }}
+                muted
+                autoPlay
+                playsinline
+                controls
+                width={width}
+                height={height}
+                className='main-video'
+              />
             </div>
-            <div style={{position: "absolute", "text-align": "center", top: 0, width: "100%"}}>
+            <div className='overlay'>
               <canvas ref={(canvas) => {
                 this.overlayCanvas = canvas;
-              }} style={{position: "relative", "max-height": "60vh"}}/>
+              }} className='main-video'/>
             </div>
           </div>
           <div style={{"text-align": "center", width: "100vw"}}>
@@ -303,18 +314,10 @@ class Camera extends React.Component {
           </div>
         </div>
         <div style={{display: this.state.debug ? 'inherit' : 'none'}}>
-          <video
-            ref={(video) => {
-              this.video = video;
-            }}
-            muted
-            autoPlay
-            playsInline
-            controls
-            width={width}
-            height={height}
-            style={{width: '50%', height: '100%'}}
-          />
+
+          <canvas ref={(canvas) => {
+            this.canvas = canvas;
+          }} className='main-video'/>
           <canvas ref={(canvas) => {
             this.tempCanvas = canvas;
           }}/>

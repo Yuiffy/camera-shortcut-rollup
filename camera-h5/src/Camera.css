@@ -1,0 +1,12 @@
+.main-video {
+    position: relative;
+    max-height: 60vh;
+    max-width: 100vw;
+}
+
+.overlay {
+    position: absolute;
+    text-align: center;
+    top: 0;
+    width: 100%
+}
