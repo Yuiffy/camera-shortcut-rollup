@@ -160,7 +160,8 @@ const clipCircle = (canvas, _x = null, _y = null, _r = null) => {
   const x = _x || canvas.width / 2;
   const y = _y || canvas.height / 2;
   const minW = Math.min(x, y);
-  const r = _r || minW;
+  let r = _r || minW;
+  if (r <= 0) r = 100;
   const ctx = canvas.getContext('2d');
 
   const tempCanvas = document.createElement('canvas');
@@ -179,7 +180,7 @@ const clipCircle = (canvas, _x = null, _y = null, _r = null) => {
   ctx.restore(); // 还原状态
 };
 
-function drawRect(canvas, x, y, angle, width, height, lineWidth = 1, color = '#00CC00') {
+const drawRect = (canvas, x, y, angle, width, height, lineWidth = 1, color = '#00CC00') => {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.translate(x, y);
@@ -189,7 +190,14 @@ function drawRect(canvas, x, y, angle, width, height, lineWidth = 1, color = '#0
   ctx.strokeRect((-(width / 2)), (-(height / 2)), width, height);
   ctx.rotate((Math.PI / 2) - angle);
   ctx.translate(-x, -y);
-}
+};
+
+const fitMinMax = (value, min, max) => {
+  let ret = value;
+  ret = Math.min(ret, max);
+  ret = Math.max(ret, min);
+  return ret;
+};
 
 function cropRectToCanvas(
   canvas, headCanvas, tempCanvas = null,
@@ -207,7 +215,7 @@ function cropRectToCanvas(
   ctx2.rotate(angle - (Math.PI / 2));
   ctx2.translate(-x, -y);
   // that.photoCanvas.getContext('2d').drawImage(that.canvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);//裁剪
-  if (aspectRatio !== null) {
+  if (aspectRatio !== null && aspectRatio != 0) {
     // 截取更多的部分来满足长宽比
     if (height * aspectRatio > width) {
       width = height * aspectRatio;
@@ -217,8 +225,15 @@ function cropRectToCanvas(
   }
   headCanvas.width = width;
   headCanvas.height = height;
+
+  let sx = x - width / 2;
+  let sy = y - height / 2;
+  //safari不允许框超出原图像，否则会不绘图。
+  sx = fitMinMax(sx, 0, tempCanvas.width - width - 1);
+  sy = fitMinMax(sy, 0, tempCanvas.height - height - 1);
+
   headCanvas.getContext('2d')
-    .drawImage(tempCanvas, x - width / 2, y - height / 2, width, height, 0, 0, width, height);// 裁剪
+    .drawImage(tempCanvas, sx, sy, width, height, 0, 0, width, height);// 裁剪
 }
 
 var CanvasUtil = /*#__PURE__*/Object.freeze({
@@ -294,6 +309,7 @@ class H5CameraHolder extends CameraHolder {
               },
             },
           };
+          if (this.select) constraints.video.deviceId = { exact: this.select };
           navi.mediaDevices.getUserMedia(constraints)
             .then((stream) => {
               console.log('getUserMedia get stream:', stream);

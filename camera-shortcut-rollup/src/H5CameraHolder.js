@@ -66,6 +66,7 @@ class H5CameraHolder extends CameraHolder {
               },
             },
           };
+          if (this.select) constraints.video.deviceId = { exact: this.select };
           navi.mediaDevices.getUserMedia(constraints)
             .then((stream) => {
               console.log('getUserMedia get stream:', stream);

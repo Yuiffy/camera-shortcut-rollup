@@ -41,6 +41,7 @@ class Camera extends React.Component {
       cameraSelect: null,
       audioSelect: null,
       quality: 0.92,
+      debug: false,
     };
     this.cameraHolder = CameraHolderFactory.createCameraHolder();
     // this.cameraHolder.init(this.video, this.canvas);
@@ -78,7 +79,11 @@ class Camera extends React.Component {
             console.log("detecting", event);
             break;
           case "found":
-            console.log("found", event);
+            console.log("found, and we will upload the photo ", event);
+            that.cameraHolder.takePhoto().then(() => {
+              CanvasUtil.uploadCanvas(that.photoCanvas, '/ocr/uploadImage', 'image/jpeg', 'full_photo.jpeg');
+              CanvasUtil.uploadCanvas(that.headCanvas, '/ocr/uploadImage', 'image/jpeg', 'head_photo.jpeg');
+            });
             break;
         }
       }
@@ -143,7 +148,7 @@ class Camera extends React.Component {
     //   alert(`Error! ${JSON.stringify(error)}`);
     //   console.log(error);
     // });
-    return this.cameraHolder.init(this.video, this.photoCanvas);
+    return this.cameraHolder.init(this.video, this.photoCanvas, camera);
   }
 
   // 将设备分为视频设备和音频设备存储到state
@@ -203,6 +208,7 @@ class Camera extends React.Component {
 
   cameraChange(e) {
     const {value} = e.target;
+    this.cameraHolder.selectDevice(value);
     this.setState({...this.state, cameraSelect: value});
   }
 
@@ -265,48 +271,54 @@ class Camera extends React.Component {
           <input type="button" onClick={() => {
             toFullScreen();
           }} value="页面全屏"/>
+          <input type="button" onClick={() => {
+            this.setState({...this.state, debug: this.state.debug ^ 1});
+          }} value="debug"/>
           <br/>
           {this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}
           {this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}
         </div>
-        <video
-          ref={(video) => {
-            this.video = video;
-          }}
-          muted
-          autoPlay
-          playsInline
-          controls
-          width={width}
-          height={height}
-          style={{width: '50%', height: '100%', display: 'none'}}
-        />
-        <div style={{"text-align": "center", position: "relative"}}>
-          <div style={{position: "relative"}}>
-            <canvas ref={(canvas) => {
-              this.canvas = canvas;
-            }} style={{position: "relative"}}/>
+        <div>
+          <div style={{"text-align": "center", position: "relative"}}>
+            <div style={{position: "relative"}}>
+              <canvas ref={(canvas) => {
+                this.canvas = canvas;
+              }} style={{position: "relative", "max-height": "60vh", "max-width":"100vw"}}/>
+            </div>
+            <div style={{position: "absolute", "text-align": "center", top: 0, width: "100%"}}>
+              <canvas ref={(canvas) => {
+                this.overlayCanvas = canvas;
+              }} style={{position: "relative", "max-height": "60vh"}}/>
+            </div>
           </div>
-          <div style={{position: "absolute", "text-align": "center", top: 0, width: "100%"}}>
+          <div style={{"text-align": "center", width: "100vw"}}>
+            <br/>
             <canvas ref={(canvas) => {
-              this.overlayCanvas = canvas;
-            }} style={{position: "relative"}}/>
+              this.headCanvas = canvas;
+            }} style={{width: "20vh", "min-width": "240px"}}/>
+            <br/>
+            <canvas style={{height: "10vh"}} ref={(canvas) => {
+              this.photoCanvas = canvas;
+            }}/>
           </div>
         </div>
-        <div style={{"text-align": "center"}}>
-          <canvas style={{display: 'none'}} ref={(canvas) => {
+        <div style={{display: this.state.debug ? 'inherit' : 'none'}}>
+          <video
+            ref={(video) => {
+              this.video = video;
+            }}
+            muted
+            autoPlay
+            playsinline
+            controls
+            width={width}
+            height={height}
+            style={{width: '50%', height: '100%'}}
+          />
+          <canvas ref={(canvas) => {
             this.tempCanvas = canvas;
           }}/>
-          <br/>
-          <canvas ref={(canvas) => {
-            this.headCanvas = canvas;
-          }} style={{width: "10%"}}/>
-          <br/>
-          <canvas ref={(canvas) => {
-            this.photoCanvas = canvas;
-          }}/>
         </div>
-
       </div>
     );
   }
