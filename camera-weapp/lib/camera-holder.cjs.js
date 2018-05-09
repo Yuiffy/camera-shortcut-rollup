@@ -49,6 +49,7 @@ class CameraHolder {
 
   setAspectRatio(aspectRatio) {
     if (aspectRatio > 0) {
+      console.log('aspectRatio =', aspectRatio);
       this.aspectRatio = aspectRatio;
     } else {
       console.log('aspectRatio <= 0 ! wont save.');
@@ -350,13 +351,20 @@ class H5CameraHolder extends CameraHolder {
       console.log('constraints = ', constraints, ' supported=', supported);
       navi.mediaDevices.getUserMedia(constraints)
         .then((stream) => {
-          console.log('getUserMedia get stream:', stream);
+          console.log('getUserMedia get stream, ready to play():', stream);
           this.videoInput.srcObject = stream;
+
           this.videoInput.play()
             .then(() => {
-              resolve('init over!');
+              console.log('play() over!');
+              resolve('play() over!');
+            })
+            .catch((e) => {
+              console.log('videoInput.play() Error: ', e);
+              reject(e);
             });
-        }, (error) => {
+        })
+        .catch((error) => {
           // alert(`Error! ${JSON.stringify(error)}`);
           console.log('getUserMedia Error: ', error);
           reject(error);

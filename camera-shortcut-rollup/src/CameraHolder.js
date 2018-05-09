@@ -45,6 +45,7 @@ class CameraHolder {
 
   setAspectRatio(aspectRatio) {
     if (aspectRatio > 0) {
+      console.log('aspectRatio =', aspectRatio);
       this.aspectRatio = aspectRatio;
     } else {
       console.log('aspectRatio <= 0 ! wont save.');
