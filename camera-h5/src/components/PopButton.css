@@ -1,0 +1,8 @@
+.pop-button-field {
+    display: flex;
+}
+
+.pop-button-field .pop-button {
+    margin: 8px;
+    color: rgba(255, 255, 255, 0.7);
+}

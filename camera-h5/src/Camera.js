@@ -2,6 +2,7 @@ import React from 'react';
 import {CameraHolderFactory, CanvasUtil} from './lib/camera-holder.esm.js'
 import headtrackr from './lib/headtracker.js'
 import './Camera.css';
+import PopButton from "./components/PopButton";
 
 const navi = navigator;
 const win = window;
@@ -40,6 +41,7 @@ class Camera extends React.Component {
       cameraSelect: null,
       audioSelect: null,
       debug: false,
+      headState: "none"
     };
     this.cameraHolder = CameraHolderFactory.createCameraHolder();
     // this.cameraHolder.init(this.video, this.canvas);
@@ -59,7 +61,8 @@ class Camera extends React.Component {
   componentDidMount() {
     var videoInput = this.video;
     var canvasInput = this.canvas;
-    var htracker = new headtrackr.Tracker({calcAngles: true});
+    //fov:0, fade: true,smoothing: false, ,cameraOffset: 100 无效
+    var htracker = new headtrackr.Tracker({calcAngles: true, ui: false});
     htracker.init(videoInput, canvasInput, false);//第三个参数是是否自动从摄像头获取内容传到video，我们这里通过cameraHolder来控制，不需要htracker来进行这个操作，就传false
     htracker.start();
     this.htracker = htracker;
@@ -75,6 +78,7 @@ class Camera extends React.Component {
 
     const overlayCanvas = this.overlayCanvas;
 
+    let restartTimer = null;
     document.addEventListener('headtrackrStatus',
       function(event) {
         switch (event.status) {
@@ -82,16 +86,44 @@ class Camera extends React.Component {
             alert("getUserMedia is supported!");
             break;
           case "detecting":
-            // console.log("detecting", event);
+          case "redetecting":
+            console.log("detecting || redetecting ", event);
+            if (that.state.headState !== "detecting") that.setState({...that.state, headState: "detecting"});
             break;
-          case "found":
+          case "found": {
             console.log("found, and we will upload the photo ", event);
+            //照相full_photo，然后上传full_photo
             that.cameraHolder.takePhoto().then(() => {
               CanvasUtil.uploadCanvas(that.photoCanvas, '/ocr/uploadImage', 'image/jpeg', 'full_photo.jpeg');
-              CanvasUtil.uploadCanvas(that.headCanvas, '/ocr/uploadImage', 'image/jpeg', 'head_photo.jpeg');
             });
+
+            setTimeout(() => {
+              if (that.state.headState !== "found") that.setState({...that.state, headState: "found"});
+              //获取头像跟踪事件一次，截取头像，然后上传头像
+              document.addEventListener("facetrackingEvent", (event) => {
+                const {detection, x, y, width, height, angle} = event;
+                if (detection == "CS") {
+                  const {tempCanvas, headCanvas, canvas} = that;
+                  CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1 / 1);
+                  CanvasUtil.clipCircle(headCanvas);
+                  CanvasUtil.uploadCanvas(that.headCanvas, '/ocr/uploadImage', 'image/jpeg', 'head_photo.jpeg');
+                }
+              }, {once: true});
+
+              //五秒后重新找头
+              clearTimeout(restartTimer);
+              restartTimer = setTimeout(() => {
+                if (that.state.headState !== "detecting") that.setState({...that.state, headState: "detecting"});
+                that.overlayCanvas.getContext('2d').clearRect(0, 0, that.overlayCanvas.width, that.overlayCanvas.height);
+                that.htracker.stop();
+                that.htracker.start();
+              }, 5000);
+            }, 500);
+
             break;
+          }
           case "lost":
+            // if (that.state.headState !== "lost") that.setState({...that.state, headState: "lost"});
             that.overlayCanvas.getContext('2d').clearRect(0, 0, that.overlayCanvas.width, that.overlayCanvas.height);
             break;
         }
@@ -104,10 +136,10 @@ class Camera extends React.Component {
       const {detection, x, y, width, height, angle} = event;
       if (detection == "CS") {
         CanvasUtil.drawRect(overlayCanvas, x, y, angle, width, height, 3, "#00CC00");
-
-        const {tempCanvas, headCanvas, canvas} = that;
-        CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1 / 1);
-        CanvasUtil.clipCircle(headCanvas);
+        //
+        // const {tempCanvas, headCanvas, canvas} = that;
+        // CanvasUtil.cropRectToCanvas(canvas, headCanvas, tempCanvas, x, y, angle, width, height, 1 / 1);
+        // CanvasUtil.clipCircle(headCanvas);
       } else {
         console.log("detection not CS: ", detection);
       }
@@ -236,52 +268,9 @@ class Camera extends React.Component {
     // console.log('render', cameras);
     return (
       <div>
-        <div style={{'text-align': 'center'}}>
-          摄像头：
-          <select onChange={this.cameraChange.bind(this)}>
-            {
-              cameras.map(option =>
-                <option key={option.value} value={option.value}>{option.text}</option>)
-            }
-          </select>
-          {/*麦克风：*/}
-          {/*<select onChange={this.audioChange.bind(this)}>*/}
-          {/*{*/}
-          {/*audios.map(option =>*/}
-          {/*<option key={option.value} value={option.value}>{option.text}</option>)*/}
-          {/*}*/}
-          {/*</select>*/}
-          <br/>
-          截图保存质量：<input
-          defaultValue={0.92}
-          onChange={(e) => {
-            this.cameraHolder.setPhotoQuality(parseFloat(e.target.value));
-          }}
-        />
-        </div>
-        <div style={{'text-align': 'center'}}>
-          <input type="button" onClick={this.drawCanvas} value="截图" style={{'background-color': 'white'}}/>
-          <input type="button" onClick={this.saveFile} value="保存图片到本地"/>
-          <input type="button" onClick={this.sendImage} value="上传图片"/>
-          <input type="button" onClick={() => {
-            this.htracker.stop();
-            this.htracker.start();
-          }} value="重新跟踪"/>
-          <input type="button" onClick={() => {
-            this.htracker.stop();
-          }} value="关闭跟踪"/>
-          <input type="button" onClick={() => {
-            toFullScreen();
-          }} value="页面全屏"/>
-          <input type="button" onClick={() => {
-            this.setState({...this.state, debug: this.state.debug ^ 1});
-          }} value="debug"/>
-          <br/>
-          {/*{this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}*/}
-          {/*{this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}*/}
-        </div>
-        <div>
-          <div style={{"text-align": "center", position: "relative"}}>
+        <div className='full-window'>
+          {/*主视频界面*/}
+          <div className='video-field'>
             <div style={{position: "relative"}}>
               <video
                 ref={(video) => {
@@ -301,20 +290,78 @@ class Camera extends React.Component {
                 this.overlayCanvas = canvas;
               }} className='main-video'/>
             </div>
+
+            <PopButton className='overlay'>
+              <div className='setting-menu'>
+                <div>
+                  <div>
+                    <span>摄像头：</span>
+                    <select onChange={this.cameraChange.bind(this)}>
+                      {
+                        cameras.map(option =>
+                          <option key={option.value} value={option.value}>{option.text}</option>)
+                      }
+                    </select>
+                    {/*麦克风：*/}
+                    {/*<select onChange={this.audioChange.bind(this)}>*/}
+                    {/*{*/}
+                    {/*audios.map(option =>*/}
+                    {/*<option key={option.value} value={option.value}>{option.text}</option>)*/}
+                    {/*}*/}
+                    {/*</select>*/}
+                    <br/>
+                    <span>截图保存质量：</span><input
+                    defaultValue={0.92}
+                    style={{'width': '5vw'}}
+                    onChange={(e) => {
+                      this.cameraHolder.setPhotoQuality(parseFloat(e.target.value));
+                    }}
+                  />
+                  </div>
+                  <div>
+                    <input type="button" onClick={this.drawCanvas} value="截图"/>
+                    <input type="button" onClick={this.saveFile} value="保存图片到本地"/>
+                    <input type="button" onClick={this.sendImage} value="上传图片"/>
+                    <input type="button" onClick={() => {
+                      this.htracker.stop();
+                      this.htracker.start();
+                    }} value="重新跟踪"/>
+                    <input type="button" onClick={() => {
+                      this.htracker.stop();
+                    }} value="关闭跟踪"/>
+                    <input type="button" onClick={() => {
+                      toFullScreen();
+                    }} value="页面全屏"/>
+                    <input type="button" onClick={() => {
+                      this.setState({...this.state, debug: this.state.debug ^ 1});
+                    }} value="debug"/>
+                    <br/>
+                    {/*{this.state.imageObj ? `size: ${(this.state.imageObj.size / 1024).toFixed(2)}KB` : null}*/}
+                    {/*{this.state.imageObj && this.video ? ` 实际宽：${this.video.videoWidth} 高：${this.video.videoHeight}` : null}*/}
+                  </div>
+                </div>
+              </div>
+            </PopButton>
           </div>
-          <div style={{"text-align": "center", width: "100vw"}}>
+          <div className='bottom-field'>
+            <div className='head-field'>
+              <canvas ref={(canvas) => {
+                this.headCanvas = canvas;
+              }} className='head-canvas'/>
+            </div>
+            {this.state.headState !== 'none' ? <div className='hint-field'>
+              <div className='hint'>
+                {this.state.headState === 'detecting' ? '正在识别...' : null}
+                {this.state.headState === 'found' ? '欢迎！' : null}
+              </div>
+            </div> : null}
             <br/>
-            <canvas ref={(canvas) => {
-              this.headCanvas = canvas;
-            }} style={{width: "20vh", "min-width": "240px"}}/>
-            <br/>
-            <canvas style={{height: "10vh"}} ref={(canvas) => {
-              this.photoCanvas = canvas;
-            }}/>
           </div>
         </div>
         <div style={{display: this.state.debug ? 'inherit' : 'none'}}>
-
+          <canvas className='photo-canvas' ref={(canvas) => {
+            this.photoCanvas = canvas;
+          }}/>
           <canvas ref={(canvas) => {
             this.canvas = canvas;
           }} className='main-video'/>
