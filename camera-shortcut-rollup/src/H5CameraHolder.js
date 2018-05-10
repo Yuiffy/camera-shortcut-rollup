@@ -35,8 +35,8 @@ class H5CameraHolder extends CameraHolder {
             }
           }
           this.cameraDevices = cameras;
-          if (cameras.length > 0) this.select = cameras[0].value;
-          resolve('refresh Device List success');
+          if (cameras.length > 0 && !this.select) this.select = cameras[0].value;
+          resolve(cameras);
         })
         .catch((e) => {
           reject(e);

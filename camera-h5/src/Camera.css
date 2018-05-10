@@ -3,9 +3,9 @@
     text-align: center;
     position: relative;
     background-color: black;
-    height: 100vh;
+    min-height: 100vh;
+    height: auto;
 }
-
 
 .video-field {
     margin: auto;
@@ -17,6 +17,8 @@
     position: relative;
     max-height: 70vh;
     max-width: 100vw;
+    height: auto;
+    width: auto;
 }
 
 .overlay {
@@ -59,6 +61,20 @@
 .head-field .head-canvas {
     height: 100%;
     min-width: 120px;
+    transition: opacity 1s ease-in-out;
+}
+
+.head-field .head-canvas.detecting {
+    filter: alpha(opacity=20);
+    opacity: 0.2;
+}
+
+.head-field .head-canvas.none {
+    opacity: 0;
+}
+
+.head-field .head-canvas.found {
+    opacity: 1.0;
 }
 
 .bottom-field {
@@ -77,7 +93,7 @@
     width: auto;
 }
 
-.photo-canvas{
+.photo-canvas {
     height: 5vh;
     float: left;
 }
