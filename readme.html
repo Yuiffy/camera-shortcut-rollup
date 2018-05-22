@@ -1,5 +1,5 @@
 <h1 id="crossappboilerplateh5version">Cross App Boilerplate - H5 Version</h1>
-<p>跨H5/小程序模板 - H5 版本，包含了以下内容：</p>
+<p>跨H5/小程序模板 - H5 版本，<a href="http://git.code.oa.com/waterwu/weapps/tree/master/boilerplate-h5">公司 Git 链接</a>, 包含了以下内容：</p>
 <ul>
 <li><p>Redux Store:</p>
 <ul>
@@ -35,6 +35,10 @@
 <li>更新 react-script 并清除 build warning</li>
 <li>视情况删除 package.json make-readme 相关 script</li>
 <li>视情况而定是否删除 App.js 中的 Sidebar</li>
+</ol>
+<h2 id="upgrading">UPGRADING</h2>
+<ol>
+<li>从原项目 copy 覆盖 framework 目录</li>
 </ol>
 <h2 id="">基础设施</h2>
 <ul>
@@ -125,15 +129,43 @@ Example: <code>app.setLoading(showing: Boolean, config: Object { duration: Integ
 <li>添加一部分命令式调用方法以加速开发: 添加在 console 命令式调用的能力</li>
 <li>语义化与标准协议的新含义：基于协议的工具。如 react-jsonschema-form, bootstrap 的 DOM 风格等</li>
 </ul>
+<h2 id="roadmap">ROADMAP</h2>
+<blockquote>
+  <p>TODO</p>
+</blockquote>
+<h2 id="changelog">CHANGELOG</h2>
+<ul>
+<li>20180514 v0.2.0 建立 framework 目录并将框架代码移入; 添加 locale 及 theme 配置到 state.status;</li>
+</ul>
 <h2 id="todo">TODO</h2>
 <ul>
-<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 给 Portal 增加 Installation 指引以及 Git 链接</li>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> showToast API</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> add loading to index html</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> add Launch page sample</li>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 去除对 react-weui 的依赖<ul>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 初步先改为模块化依赖</li></ul></li>
-<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 完善 Theme 的支持, 界面添加切换 dark theme</li>
-<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 部署到 demo.ibg.com 提供体验</li>
-<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> Drawer 接入优化</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 语言切换</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 完善 Theme 的支持, 界面添加切换 dark theme</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 将框架代码移入 framework 目录以供后续其他项目更新</li>
+<li>组件优化<ul>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> Collapse 组件</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> Card 增加 Collapse 功能</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> withDefaultProp HOC</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 基础 List &amp; Menu 组件</li></ul></li>
+<li>Form 优化<ul>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 使用 mem 及 es6-weak-map polyfill 优化 Form 中的性能</li></ul></li>
+<li>尝试替换 react-intl<ul>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 评估 y18n, messageformat 在小程序中的兼容情况</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 重新实现简化版本的 Provider 与 injectIntl</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 设计格式化文本的 i18n 处理 (可考虑 HTML Based 并在小程序中通过 wxParser 进行转换?)</li></ul></li>
+<li>应用结构梳理优化<ul>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> App.js 结构优化, 测试覆盖, 重构</li></ul></li>
+<li>RestView 优化<ul>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 增强定制化能力</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;"> 增加 schema 生成 queryForm 或者自行配置</li></ul></li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> Drawer 接入优化</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 给 Portal 增加 Installation 指引以及 Git 链接</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> ~~设计页面性能评估方案:~~ React 16 官方建议使用 Chrome 自带的 Performance Tab</li>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 添加 scss watch 到 npm start</li>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 完善 UI 数据组件页面</li>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 完善 Schema 表单组件页面<ul>
@@ -141,4 +173,5 @@ Example: <code>app.setLoading(showing: Boolean, config: Object { duration: Integ
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> SchemaForm 注释文档补充</li>
 <li>showSchemaForm API 说明</li></ul></li>
 <li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> RESTful 示例</li>
+<li class="task-list-item" style="list-style-type: none;"><input type="checkbox" disabled style="margin: 0px 0.35em 0.25em -1.6em; vertical-align: middle;" checked> 部署到 demo.ibg.com 提供体验</li>
 </ul>
